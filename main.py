@@ -36,6 +36,57 @@ page_header = """
     </h1>
 """
 
+# main body of signup page
+username, username_error, password_error  = "", "", ""
+verify_error, email, email_error = "", "", ""
+
+username_row = """
+<tr>
+    <td>
+        <label for="username">Username</label>
+    </td>
+    <td>
+        <input name="username" required="" type="text" value="{0}"/>
+        <span class="error">{1}</span>
+    </td>
+</tr>
+""".format(username, username_error)
+
+password_row = """
+<tr>
+    <td>
+        <label for="password">Password</label>
+    </td>
+    <td>
+        <input name="password" required="" type="password" value=""/>
+        <span class="error">{0}</span>
+    </td>
+</tr>""".format(password_error)
+
+verify_row = """
+<tr>
+    <td>
+        <label for="verify">Verify Password</label>
+    </td>
+    <td>
+        <input name="verify" required="" type="password" value=""/>
+        <span class="error">{0}</span>
+    </td>
+</tr>
+""".format(verify_error)
+
+email_row = """
+<tr>
+    <td>
+        <label for="email">Email (optional)</label>
+    </td>
+    <td>
+        <input name="email" type="email" value="{0}"/>
+        <span class="error">{1}</span>
+    </td>
+</tr>
+""".format(email, email_error)
+
 # html boilerplate for the bottom of every page
 page_footer = """
 </body>
@@ -53,60 +104,15 @@ def validate_password(password):
     return password and PASS_RE.match(password)
 
 def validate_email(email):
-    return not email and EMAIL_RE.match(email)
+    return not email or EMAIL_RE.match(email)
 
 class MainHandler(webapp2.RequestHandler):
     """Handles requests coming in to '/'"""
 
+
+
     def get(self):
         signup_header = "<h3>Create a Username and Password</h3>"
-
-        username_row = """
-        <tr>
-            <td>
-                <label for="username">Username</label>
-            </td>
-            <td>
-                <input name="username" required="" type="text" value="{0}"/>
-                <span class="error">{1}</span>
-            </td>
-        </tr>
-        """.format(username, username_error)
-
-        password_row = """
-        <tr>
-            <td>
-                <label for="password">Password</label>
-            </td>
-            <td>
-                <input name="password" required="" type="password" value=""/>
-                <span class="error">{0}</span>
-            </td>
-        </tr>""".format(password_error)
-
-        verify_row = """
-        <tr>
-            <td>
-                <label for="verify">Verify Password</label>
-            </td>
-            <td>
-                <input name="verify" required="" type="password" value=""/>
-                <span class="error">{0}</span>
-            </td>
-        </tr>
-        """.format(verify_error)
-
-        email_row = """
-        <tr>
-            <td>
-                <label for="email">Email (optional)</label>
-            </td>
-            <td>
-                <input name="email" type="email" value="{0}"/>
-                <span class="error">{1}</span>
-            </td>
-        </tr>
-        """.format(email, email_error)
 
         table_body = "<table><tbody>" + username_row + password_row + verify_row + email_row + "</tbody></table>"
 
@@ -119,33 +125,35 @@ class MainHandler(webapp2.RequestHandler):
         self.response.write(content)
 
     def post(self):
-        username = cgi.escape(self.request.get("username"))
-        password = self.request.get("password")
-        verify = self.request.get("verify")
+        username = self.request.get("username")
+        password = cgi.escape(self.request.get("password"))
+        verify = cgi.escape(self.request.get("verify"))
         email = cgi.escape(self.request.get("email"))
 
         if not validate_username(username):
             username_error = "Invalid Username"
             self.redirect("/?error=" + username_error)
 
-        if not validate_password(password):
+        elif not validate_password(password):
             password_error = "Invalid Password"
             self.redirect("/?error=" + password_error)
 
-        if verify != password:
+        elif verify != password:
             verify_error = "Password Doesn't Match"
             self.redirect("/?error=" + verify_error)
 
-        if not validate_email(email):
+        elif not validate_email(email):
             email_error = "Invalid Email"
             self.redirect("/?error=" + email_error)
 
-        self.redirect("/welcome?username=" + username)
+        else:
+            self.redirect("/welcome?username=" + username)
 
 class Welcome(webapp2.RequestHandler):
     """Handles requests coming in to '/Welcome'"""
 
-    def post(self):   
+    def get(self):
+        username = self.request.get("username")   
         user_welcome = "Welcome, " + username + "!"
         content = page_header + "<p>" + user_welcome + "</p>" + page_footer
 
