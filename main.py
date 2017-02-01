@@ -47,15 +47,15 @@ PASS_RE = re.compile(r"^.{3,20}$")
 EMAIL_RE = re.compile(r"^[\S] + @[\S] + .[\S] + $")
 
 def validate_username(username):
-    return USER_RE.match(username)
+    return username and USER_RE.match(username)
 
 def validate_password(password):
-    return PASS_RE.match(password)
+    return password and PASS_RE.match(password)
 
 def validate_email(email):
-    return EMAIL_RE.match(email)
+    return not email and EMAIL_RE.match(email)
 
-class Index(webapp2.RequestHandler):
+class MainHandler(webapp2.RequestHandler):
     """Handles requests coming in to '/'"""
 
     def get(self):
@@ -67,11 +67,11 @@ class Index(webapp2.RequestHandler):
                 <label for="username">Username</label>
             </td>
             <td>
-                <input name="username" required="" type="text" value=""/>
-                <span class="error"></span>
+                <input name="username" required="" type="text" value="{0}"/>
+                <span class="error">{1}</span>
             </td>
         </tr>
-        """
+        """.format(username, username_error)
 
         password_row = """
         <tr>
@@ -80,9 +80,9 @@ class Index(webapp2.RequestHandler):
             </td>
             <td>
                 <input name="password" required="" type="password" value=""/>
-                <span class="error"></span>
+                <span class="error">{0}</span>
             </td>
-        </tr>"""
+        </tr>""".format(password_error)
 
         verify_row = """
         <tr>
@@ -91,10 +91,10 @@ class Index(webapp2.RequestHandler):
             </td>
             <td>
                 <input name="verify" required="" type="password" value=""/>
-                <span class="error"></span>
+                <span class="error">{0}</span>
             </td>
         </tr>
-        """
+        """.format(verify_error)
 
         email_row = """
         <tr>
@@ -102,11 +102,11 @@ class Index(webapp2.RequestHandler):
                 <label for="email">Email (optional)</label>
             </td>
             <td>
-                <input name="email" required="" type="email" value=""/>
-                <span class="error"></span>
+                <input name="email" type="email" value="{0}"/>
+                <span class="error">{1}</span>
             </td>
         </tr>
-        """
+        """.format(email, email_error)
 
         table_body = "<table><tbody>" + username_row + password_row + verify_row + email_row + "</tbody></table>"
 
@@ -118,25 +118,40 @@ class Index(webapp2.RequestHandler):
 
         self.response.write(content)
 
-class Username(webapp2.RequestHandler):
-    """Handles requests coming in to '/Username'"""
-
     def post(self):
-        username = self.request.get("username")
+        username = cgi.escape(self.request.get("username"))
+        password = self.request.get("password")
+        verify = self.request.get("verify")
+        email = cgi.escape(self.request.get("email"))
 
         if not validate_username(username):
-            error = "Invalid Username"
-            self.redirect("/?error=" + error)
+            username_error = "Invalid Username"
+            self.redirect("/?error=" + username_error)
 
-        #self.response.write(content)
+        if not validate_password(password):
+            password_error = "Invalid Password"
+            self.redirect("/?error=" + password_error)
 
+        if verify != password:
+            verify_error = "Password Doesn't Match"
+            self.redirect("/?error=" + verify_error)
 
-class Password(webapp2.RequestHandler):
-    """Handles requests coming in to '/Password'"""
+        if not validate_email(email):
+            email_error = "Invalid Email"
+            self.redirect("/?error=" + email_error)
 
-class Email(webapp2.RequestHandler):
-    """Handles requests comong in to '/Email'"""
+        self.redirect("/welcome?username=" + username)
+
+class Welcome(webapp2.RequestHandler):
+    """Handles requests coming in to '/Welcome'"""
+
+    def post(self):   
+        user_welcome = "Welcome, " + username + "!"
+        content = page_header + "<p>" + user_welcome + "</p>" + page_footer
+
+        self.response.write(content)
 
 app = webapp2.WSGIApplication([
-    ('/', Index)
+    ('/', MainHandler),
+    ('/welcome', Welcome)
 ], debug=True)
