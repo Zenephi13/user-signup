@@ -46,11 +46,11 @@ username_row = """
         <label for="username">Username</label>
     </td>
     <td>
-        <input name="username" required="" type="text" value="{0}"/>
-        <span class="error">{1}</span>
+        <input name="username" required="" type="text" value="{}"/>
+        <span class="username_error">{}</span>
     </td>
 </tr>
-""".format(username, username_error)
+"""
 
 password_row = """
 <tr>
@@ -59,9 +59,9 @@ password_row = """
     </td>
     <td>
         <input name="password" required="" type="password" value=""/>
-        <span class="error">{0}</span>
+        <span class="error">{}</span>
     </td>
-</tr>""".format(password_error)
+</tr>"""
 
 verify_row = """
 <tr>
@@ -70,10 +70,10 @@ verify_row = """
     </td>
     <td>
         <input name="verify" required="" type="password" value=""/>
-        <span class="error">{0}</span>
+        <span class="error">{}</span>
     </td>
 </tr>
-""".format(verify_error)
+"""
 
 email_row = """
 <tr>
@@ -81,8 +81,8 @@ email_row = """
         <label for="email">Email (optional)</label>
     </td>
     <td>
-        <input name="email" type="email" value="{0}"/>
-        <span class="error">{1}</span>
+        <input name="email" type="email" value="{}"/>
+        <span class="error">{}</span>
     </td>
 </tr>
 """.format(email, email_error)
@@ -112,9 +112,13 @@ class MainHandler(webapp2.RequestHandler):
 
 
     def get(self):
+        username = self.request.get("username")
+        username_error = self.request.get("username_error")
+        #verify_error = cgi.escape(self.request.get("error"))
+
         signup_header = "<h3>Create a Username and Password</h3>"
 
-        table_body = "<table><tbody>" + username_row + password_row + verify_row + email_row + "</tbody></table>"
+        table_body = "<table><tbody>" + username_row.format(username, username_error) + password_row.format(password_error) + verify_row.format(verify_error) + email_row.format(email, email_error) + "</tbody></table>"
 
         submit_button = """<input type="submit" value="Submit Info"/>"""
 
@@ -132,7 +136,7 @@ class MainHandler(webapp2.RequestHandler):
 
         if not validate_username(username):
             username_error = "Invalid Username"
-            self.redirect("/?error=" + username_error)
+            self.redirect("/?username=" + username + "&username_error=" + username_error)
 
         elif not validate_password(password):
             password_error = "Invalid Password"
